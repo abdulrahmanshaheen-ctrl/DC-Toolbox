@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>talabat DC Toolbox</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #FF5900;
+    --orange-dark: #B34700;
+    --orange-light: #FF944D;
+    --orange-pale: #FFD1B3;
+    --cream: #F4EDE3;
+    --burgundy: #411517;
+    --lime: #CFFF00;
+    --white: #FFFFFF;
+    --gray: #595959;
+    --green: #1a9e52;
+    --green-pale: #d4f5e2;
+    --red: #c0392b;
+    --red-pale: #fde8e6;
+    --yellow: #f39c12;
+    --yellow-pale: #fef3d7;
+    --sidebar-w: 220px;
+  }
+
+  body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background: var(--cream);
+    color: var(--burgundy);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--orange);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 14px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 200;
+    box-shadow: 0 2px 12px rgba(65,21,23,0.2);
+  }
+
+  .hamburger {
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; gap: 5px; padding: 4px;
+    flex-shrink: 0;
+  }
+  .hamburger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--cream); border-radius: 2px;
+    transition: all 0.25s;
+  }
+
+  .topbar-logo {
+    display: flex; align-items: center; gap: 10px; text-decoration: none;
+  }
+  .topbar-logo-icon {
+    width: 30px; height: 30px; background: var(--cream); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 900; color: var(--orange);
+    transform: rotate(4.7deg);
+  }
+  .topbar-logo-text {
+    color: var(--cream); font-weight: 800; font-size: 17px; letter-spacing: -0.3px;
+  }
+  .topbar-logo-text span { color: var(--lime); }
+
+  .topbar-tool-name {
+    margin-left: auto;
+    color: rgba(244,237,227,0.75);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.3px;
+    background: rgba(244,237,227,0.12);
+    padding: 4px 12px; border-radius: 20px;
+  }
+
+  /* ── LAYOUT ── */
+  .app-body {
+    display: flex;
+    margin-top: 56px;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--burgundy);
+    position: fixed;
+    top: 56px; left: 0; bottom: 0;
+    z-index: 150;
+    transform: translateX(0);
+    transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+  }
+
+  .sidebar-section {
+    padding: 18px 14px 8px;
+    font-size: 9px; font-weight: 700;
+    color: rgba(244,237,227,0.35);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 16px;
+    margin: 2px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: rgba(244,237,227,0.08); }
+  .nav-item.active { background: var(--orange); }
+
+  .nav-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+  .nav-label { font-size: 13px; font-weight: 600; color: var(--cream); }
+  .nav-item.active .nav-label { color: var(--white); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid rgba(244,237,227,0.08);
+    font-size: 10px;
+    color: rgba(244,237,227,0.25);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .sidebar-footer span { color: var(--orange); }
+
+  /* ── MAIN CONTENT ── */
+  .main-content {
+    flex: 1;
+    margin-left: var(--sidebar-w);
+    transition: margin-left 0.28s cubic-bezier(.4,0,.2,1);
+    min-width: 0;
+  }
+
+  .main-content.full-width {
+    margin-left: 0;
+  }
+
+  /* ── TOOL PANELS ── */
+  .tool-panel { display: none; }
+  .tool-panel.active { display: block; }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--burgundy);
+    padding: 44px 40px 38px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -50px; right: -50px;
+    width: 240px; height: 240px; background: var(--orange);
+    opacity: 0.11; border-radius: 50%;
+  }
+  .hero-eyebrow {
+    color: var(--lime); font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .hero h1 { color: var(--cream); font-size: 34px; font-weight: 900; line-height: 1.1; }
+  .hero h1 span { color: var(--orange); }
+  .hero-sub { color: rgba(244,237,227,0.6); font-size: 13px; margin-top: 8px; max-width: 500px; }
+
+  /* HOME PANEL */
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    padding: 32px 32px 80px;
+  }
+
+  .home-tool-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 28px 24px;
+    border: 1.5px solid rgba(255,89,0,0.10);
+    box-shadow: 0 2px 12px rgba(65,21,23,0.06);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .home-tool-card:hover {
+    box-shadow: 0 6px 24px rgba(255,89,0,0.13);
+    border-color: var(--orange);
+    transform: translateY(-2px);
+  }
+  .home-tool-icon { font-size: 36px; margin-bottom: 14px; display: block; }
+  .home-tool-name { font-size: 16px; font-weight: 800; color: var(--burgundy); margin-bottom: 6px; }
+  .home-tool-desc { font-size: 12px; color: var(--gray); line-height: 1.6; }
+  .home-tool-arrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 16px; font-size: 12px; font-weight: 700;
+    color: var(--orange);
+  }
+
+  /* ── SHARED INNER STYLES ── */
+  .inner { max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }
+  .inner-wide { max-width: 1000px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .step-card {
+    background: var(--white); border-radius: 16px; padding: 28px;
+    margin-bottom: 18px; border: 1.5px solid rgba(255,89,0,0.10);
+    box-shadow: 0 2px 12px rgba(65,21,23,0.06);
+    transition: box-shadow 0.2s;
+  }
+  .step-card:hover { box-shadow: 0 4px 24px rgba(255,89,0,0.10); }
+
+  .step-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .step-num {
+    width: 34px; height: 34px; background: var(--orange); color: var(--white);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; flex-shrink: 0;
+  }
+  .step-title { font-size: 16px; font-weight: 700; color: var(--burgundy); }
+  .step-desc { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+  /* UPLOAD */
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .upload-grid { grid-template-columns: 1fr; } }
+
+  .upload-zone {
+    border: 2px dashed rgba(255,89,0,0.3); border-radius: 12px; padding: 28px 18px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+    background: var(--cream); position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--orange); background: rgba(255,89,0,0.04); }
+  .upload-zone.done { border-color: var(--orange); border-style: solid; background: rgba(255,89,0,0.05); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-label { font-size: 13px; font-weight: 700; color: var(--burgundy); }
+  .upload-hint { font-size: 11px; color: var(--gray); margin-top: 3px; }
+  .upload-filename {
+    margin-top: 10px; font-size: 11px; font-weight: 600; color: var(--orange);
+    background: rgba(255,89,0,0.08); padding: 4px 10px; border-radius: 20px; display: inline-block;
+  }
+
+  /* EXCLUSION GRID */
+  .exclusion-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px; margin-top: 4px;
+  }
+  .exclusion-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 12px; border-radius: 9px; background: var(--cream);
+    cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; user-select: none;
+  }
+  .exclusion-item:hover { border-color: var(--orange-light); }
+  .exclusion-item.active { background: rgba(255,89,0,0.08); border-color: var(--orange); }
+  .exclusion-item input[type="checkbox"] { accent-color: var(--orange); width: 15px; height: 15px; flex-shrink: 0; }
+  .exclusion-label { font-size: 12px; font-weight: 600; color: var(--burgundy); }
+  .exclusion-badge {
+    margin-left: auto; font-size: 10px;
+    background: var(--orange-pale); color: var(--orange-dark);
+    padding: 2px 7px; border-radius: 10px; font-weight: 700;
+  }
+
+  /* BUTTONS */
+  .process-btn {
+    width: 100%; padding: 16px; background: var(--orange); color: var(--white);
+    border: none; border-radius: 12px; font-family: 'Poppins', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  }
+  .process-btn:hover:not(:disabled) { background: var(--orange-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,89,0,0.3); }
+  .process-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .btn-primary {
+    padding: 13px 26px; background: var(--orange); color: var(--white);
+    border: none; border-radius: 10px; font-family: 'Poppins', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--orange-dark); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-lime {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; background: var(--lime); color: var(--burgundy);
+    border: none; border-radius: 10px; font-family: 'Poppins', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-lime:hover { background: #b8e600; transform: translateY(-1px); }
+
+  .btn-secondary {
+    padding: 10px 18px; background: var(--cream); color: var(--burgundy);
+    border: 1.5px solid rgba(255,89,0,0.3); border-radius: 8px;
+    font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--orange); background: rgba(255,89,0,0.05); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+
+  /* PROGRESS */
+  .progress-bar-wrap { height: 5px; background: rgba(255,89,0,0.12); border-radius: 3px; margin-top: 14px; overflow: hidden; display: none; }
+  .progress-bar-wrap.visible { display: block; }
+  .progress-bar { height: 100%; background: var(--orange); border-radius: 3px; width: 0%; transition: width 0.4s ease; }
+  .progress-label { font-size: 11px; color: var(--gray); margin-top: 6px; display: none; font-weight: 500; }
+  .progress-label.visible { display: block; }
+
+  /* RESULTS */
+  .results-card {
+    background: var(--burgundy); border-radius: 16px; padding: 28px;
+    margin-top: 18px; display: none; color: var(--cream);
+  }
+  .results-card.visible { display: block; }
+  .results-title { font-size: 19px; font-weight: 800; color: var(--cream); margin-bottom: 18px; }
+  .results-title span { color: var(--lime); }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .stat-box { background: rgba(244,237,227,0.08); border-radius: 10px; padding: 14px; border: 1px solid rgba(244,237,227,0.12); }
+  .stat-value { font-size: 24px; font-weight: 800; color: var(--orange); line-height: 1; margin-bottom: 4px; }
+  .stat-label { font-size: 10px; color: rgba(244,237,227,0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* INFO NOTE */
+  .info-note {
+    background: rgba(255,89,0,0.07); border-left: 3px solid var(--orange);
+    border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 12px;
+    color: var(--burgundy); margin-top: 14px; line-height: 1.6;
+  }
+  .info-note strong { color: var(--orange); }
+
+  /* ERROR */
+  .error-msg {
+    background: rgba(255,89,0,0.12); border: 1px solid rgba(255,89,0,0.3);
+    border-radius: 10px; padding: 12px 16px; color: var(--orange-dark);
+    font-size: 12px; font-weight: 500; margin-top: 14px; display: none;
+  }
+  .error-msg.visible { display: block; }
+
+  /* ── SHIPPING PLAN SPECIFIC ── */
+  .plan-table-wrap { overflow-x: auto; border-radius: 12px; border: 1.5px solid rgba(255,89,0,0.12); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { background: var(--burgundy); }
+  thead th { padding: 11px 13px; text-align: left; font-weight: 700; font-size: 10px; color: var(--cream); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid rgba(255,89,0,0.08); transition: background 0.1s; }
+  tbody tr:hover { background: rgba(255,89,0,0.03); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 9px 13px; color: var(--burgundy); white-space: nowrap; }
+  td.ds-name { font-weight: 600; }
+  td.st-num { font-family: monospace; font-size: 11px; color: var(--gray); }
+  .trucks-badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .trucks-1 { background: var(--green-pale); color: var(--green); }
+  .trucks-2 { background: var(--yellow-pale); color: var(--yellow); }
+  .trucks-3 { background: var(--red-pale); color: var(--red); }
+  .status-hold { background: var(--red-pale); color: var(--red); padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .status-ok { background: var(--green-pale); color: var(--green); padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .delete-row-btn { background: none; border: none; color: rgba(65,21,23,0.3); cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 4px; transition: all 0.1s; }
+  .delete-row-btn:hover { color: var(--red); background: var(--red-pale); }
+
+  .kpi-bar { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .kpi-box { background: rgba(244,237,227,0.08); border-radius: 10px; padding: 14px; border: 1px solid rgba(244,237,227,0.12); }
+  .kpi-value { font-size: 24px; font-weight: 800; color: var(--orange); line-height: 1; margin-bottom: 4px; }
+  .kpi-label { font-size: 10px; color: rgba(244,237,227,0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .ms-wrap { position: relative; }
+  .ms-input { width: 100%; padding: 10px 14px; border: 1.5px solid rgba(255,89,0,0.2); border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--burgundy); background: var(--cream); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; user-select: none; min-height: 42px; }
+  .ms-input.open { border-color: var(--orange); }
+  .ms-tags { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+  .ms-placeholder { color: var(--gray); font-size: 12px; }
+  .ms-tag { background: var(--red-pale); color: var(--red); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px; display: flex; align-items: center; gap: 4px; }
+  .ms-tag .x { cursor: pointer; font-size: 12px; }
+  .ms-arrow { flex-shrink: 0; margin-left: 6px; transition: transform 0.15s; }
+  .ms-arrow.open { transform: rotate(180deg); }
+  .ms-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--white); border: 1.5px solid rgba(255,89,0,0.2); border-radius: 10px; box-shadow: 0 8px 24px rgba(65,21,23,0.12); z-index: 50; display: none; max-height: 220px; overflow-y: auto; }
+  .ms-dropdown.open { display: block; }
+  .ms-search { padding: 9px 11px; border-bottom: 1px solid rgba(255,89,0,0.1); position: sticky; top: 0; background: var(--white); }
+  .ms-search input { width: 100%; padding: 6px 10px; border: 1.5px solid rgba(255,89,0,0.2); border-radius: 6px; font-family: 'Poppins', sans-serif; font-size: 12px; outline: none; color: var(--burgundy); background: var(--cream); }
+  .ms-option { padding: 9px 13px; font-size: 12px; cursor: pointer; color: var(--burgundy); display: flex; align-items: center; gap: 8px; transition: background 0.1s; }
+  .ms-option:hover { background: rgba(255,89,0,0.05); }
+  .ms-option.selected { background: rgba(255,89,0,0.08); color: var(--orange); font-weight: 600; }
+  .ms-option input[type="checkbox"] { accent-color: var(--orange); flex-shrink: 0; }
+
+  .date-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .date-row label { font-size: 12px; font-weight: 700; color: var(--burgundy); white-space: nowrap; }
+  .date-row input[type="date"] { padding: 8px 12px; border: 1.5px solid rgba(255,89,0,0.2); border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--burgundy); background: var(--cream); outline: none; }
+  .date-row input[type="date"]:focus { border-color: var(--orange); }
+
+  .empty-state { text-align: center; padding: 36px 20px; color: var(--gray); font-size: 13px; }
+  .empty-state .big { font-size: 32px; margin-bottom: 8px; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--burgundy); color: rgba(244,237,227,0.35);
+    text-align: center; padding: 18px; font-size: 10px; font-weight: 500;
+  }
+  footer span { color: var(--orange); }
+
+  /* ── MOBILE ── */
+  @media (max-width: 700px) {
+    .sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0 !important; }
+    .hero { padding: 32px 20px 28px; }
+    .hero h1 { font-size: 26px; }
+    .inner, .inner-wide { padding: 20px 14px 60px; }
+    .home-grid { padding: 20px 14px 60px; }
+    .sidebar-overlay { display: block; }
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0; background: rgba(65,21,23,0.4);
+    z-index: 140; backdrop-filter: blur(2px);
+  }
+  .sidebar-overlay.visible { display: block; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="topbar-logo" onclick="showTool('home')" style="cursor:pointer;">
+    <div class="topbar-logo-icon">t</div>
+    <div class="topbar-logo-text">talabat <span>DC</span></div>
+  </a>
+  <div class="topbar-tool-name" id="topbar-tool-name">Home</div>
+</div>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-section">Tools</div>
+
+    <a class="nav-item active" id="nav-home" onclick="showTool('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </a>
+
+    <a class="nav-item" id="nav-stock" onclick="showTool('stock')">
+      <span class="nav-icon">📦</span>
+      <span class="nav-label">Stock Cleaner</span>
+    </a>
+
+    <a class="nav-item" id="nav-shipping" onclick="showTool('shipping')">
+      <span class="nav-icon">🚛</span>
+      <span class="nav-label">Shipping Plan</span>
+    </a>
+
+    <div class="sidebar-footer">
+      talabat DC Toolbox<br>
+      Built for <span>Data Team</span>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content" id="main-content">
+
+    <!-- ══════════════════════════════════════════
+         HOME PANEL
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel active" id="panel-home">
+      <div class="hero">
+        <div class="hero-eyebrow">Distribution Center · Egypt</div>
+        <h1>DC <span>Toolbox</span></h1>
+        <p class="hero-sub">Your daily data team toolkit — stock, shipping, and more. Pick a tool to get started.</p>
+      </div>
+      <div class="home-grid">
+        <div class="home-tool-card" onclick="showTool('stock')">
+          <span class="home-tool-icon">📦</span>
+          <div class="home-tool-name">Stock Cleaner</div>
+          <div class="home-tool-desc">Upload On Hand + Physical Inventory. Exclude Dock, Damaged, MOQ and other locations. Download net available stock ready for order planning.</div>
+          <div class="home-tool-arrow">Open tool →</div>
+        </div>
+        <div class="home-tool-card" onclick="showTool('shipping')">
+          <span class="home-tool-icon">🚛</span>
+          <div class="home-tool-name">Shipping Plan</div>
+          <div class="home-tool-desc">Manage daily transfer orders for 89 Dark Stores. Set holds, calculate trucks, and export the final shipping plan to Excel.</div>
+          <div class="home-tool-arrow">Open tool →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         STOCK CLEANER PANEL
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel" id="panel-stock">
+      <div class="hero">
+        <div class="hero-eyebrow">Warehouse Management</div>
+        <h1>Clean <span>Available</span> Stock</h1>
+        <p class="hero-sub">Upload On Hand and Physical Inventory. Select locations to exclude, download net available stock ready for order planning.</p>
+      </div>
+      <div class="inner">
+
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-num">1</div>
+            <div>
+              <div class="step-title">Upload Your Files</div>
+              <div class="step-desc">Both files must be .xlsx format exported from your WMS</div>
+            </div>
+          </div>
+          <div class="upload-grid">
+            <div class="upload-zone" id="sc-zone-onhand">
+              <input type="file" id="sc-file-onhand" accept=".xlsx,.xls" />
+              <div class="upload-icon">📋</div>
+              <div class="upload-label">On Hand List</div>
+              <div class="upload-hint">Available physical per item</div>
+              <div class="upload-filename" id="sc-name-onhand" style="display:none"></div>
+            </div>
+            <div class="upload-zone" id="sc-zone-physical">
+              <input type="file" id="sc-file-physical" accept=".xlsx,.xls" />
+              <div class="upload-icon">📦</div>
+              <div class="upload-label">Physical Inventory</div>
+              <div class="upload-hint">Detailed per location breakdown</div>
+              <div class="upload-filename" id="sc-name-physical" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-num">2</div>
+            <div>
+              <div class="step-title">Select Locations to Exclude</div>
+              <div class="step-desc">Only "Available" inventory in these locations will be deducted</div>
+            </div>
+          </div>
+          <div class="exclusion-grid">
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="Dock 01|Dock 01 :0" checked />
+              <span class="exclusion-label">Dock</span>
+              <span class="exclusion-badge">2 locs</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="V-D" checked />
+              <span class="exclusion-label">V-D</span>
+              <span class="exclusion-badge">Virtual Dmg</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="H-D" checked />
+              <span class="exclusion-label">H-D</span>
+              <span class="exclusion-badge">Hold Dmg</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="MOQ" checked />
+              <span class="exclusion-label">MOQ (all)</span>
+              <span class="exclusion-badge">Pattern</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="Truck 01" checked />
+              <span class="exclusion-label">Truck 01</span>
+              <span class="exclusion-badge">On Truck</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="D.damage" checked />
+              <span class="exclusion-label">D.damage</span>
+              <span class="exclusion-badge">Damage</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="1000G" checked />
+              <span class="exclusion-label">1000G</span>
+              <span class="exclusion-badge">1000G</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="4000G" checked />
+              <span class="exclusion-label">4000G</span>
+              <span class="exclusion-badge">4000G</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="EX-R01-A" checked />
+              <span class="exclusion-label">EX-R01-A</span>
+              <span class="exclusion-badge">EX-R01-A</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="M-50" checked />
+              <span class="exclusion-label">M-50</span>
+              <span class="exclusion-badge">M-50</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="PS" checked />
+              <span class="exclusion-label">PS</span>
+              <span class="exclusion-badge">PS</span>
+            </label>
+            <label class="exclusion-item active" onclick="scToggleEx(this)">
+              <input type="checkbox" value="Sold-off" checked />
+              <span class="exclusion-label">Sold-off</span>
+              <span class="exclusion-badge">Sold-off</span>
+            </label>
+            <label class="exclusion-item active" style="border-color: var(--orange); background: rgba(255,89,0,0.08); cursor:default;">
+              <input type="checkbox" checked disabled />
+              <span class="exclusion-label">All Damaged</span>
+              <span class="exclusion-badge">Always On</span>
+            </label>
+          </div>
+          <div class="info-note">
+            <strong>Note:</strong> Picker names are not excluded — already reserved by the system. All <strong>Damaged</strong> inventory is always deducted regardless of location.
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-num">3</div>
+            <div>
+              <div class="step-title">Generate Clean Stock Report</div>
+              <div class="step-desc">Processing happens in your browser — no data leaves your device</div>
+            </div>
+          </div>
+          <button class="process-btn" id="sc-process-btn" onclick="scProcess()" disabled>🔄 Process & Download</button>
+          <div class="progress-bar-wrap" id="sc-progress-wrap">
+            <div class="progress-bar" id="sc-progress-bar"></div>
+          </div>
+          <div class="progress-label" id="sc-progress-label"></div>
+          <div class="error-msg" id="sc-error-msg"></div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-card" id="sc-results-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+            <div class="results-title">Report <span>Ready</span> ✓</div>
+            <button class="btn-lime" id="sc-download-btn">⬇ Download Excel</button>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-box"><div class="stat-value" id="sc-stat-total">—</div><div class="stat-label">Total Items</div></div>
+            <div class="stat-box"><div class="stat-value" id="sc-stat-affected">—</div><div class="stat-label">Items Adjusted</div></div>
+            <div class="stat-box"><div class="stat-value" id="sc-stat-deducted">—</div><div class="stat-label">Units Excluded</div></div>
+            <div class="stat-box"><div class="stat-value" id="sc-stat-locs">—</div><div class="stat-label">Locations Scanned</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SHIPPING PLAN PANEL
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel" id="panel-shipping">
+      <div class="hero">
+        <div class="hero-eyebrow">Distribution Center · Egypt</div>
+        <h1>Daily <span>Shipping</span> Plan</h1>
+        <p class="hero-sub">Manage transfers for 89 Dark Stores — upload a file, set holds, and export the final plan.</p>
+      </div>
+      <div class="inner-wide">
+
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-num">1</div>
+            <div>
+              <div class="step-title">Plan Settings</div>
+              <div class="step-desc">Set the plan date and mark stores on hold</div>
+            </div>
+          </div>
+          <div class="date-row">
+            <label>📅 Plan Date</label>
+            <input type="date" id="sp-plan-date" />
+          </div>
+          <div style="margin-bottom:6px;font-size:12px;font-weight:700;color:var(--burgundy);">
+            🔴 Stores on Hold <span style="font-weight:400;color:var(--gray);">(won't appear in the transfer plan)</span>
+          </div>
+          <div style="margin-bottom:10px;font-size:11px;color:var(--gray);background:rgba(255,89,0,0.06);border-left:3px solid var(--orange-pale);border-radius:0 6px 6px 0;padding:7px 12px;">
+            📌 <strong style="color:var(--burgundy);">DS 62, 69, 83, 84</strong> are permanently on hold until stores go live.
+          </div>
+          <div class="ms-wrap" id="sp-hold-wrap">
+            <div class="ms-input" id="sp-hold-input" tabindex="0">
+              <div class="ms-tags" id="sp-hold-tags"><span class="ms-placeholder">Select stores to put on hold...</span></div>
+              <span class="ms-arrow" id="sp-hold-arrow">▼</span>
+            </div>
+            <div class="ms-dropdown" id="sp-hold-dropdown">
+              <div class="ms-search"><input type="text" id="sp-hold-search" placeholder="Search by number or name..." /></div>
+              <div id="sp-hold-options"></div>
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+            <input type="text" id="sp-hold-paste"
+              placeholder="Paste DS numbers e.g. 1, 3, 5, 62"
+              style="flex:1;padding:9px 14px;border:1.5px dashed rgba(255,89,0,0.35);border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;color:var(--burgundy);background:var(--cream);outline:none;"
+              onkeydown="if(event.key==='Enter') spApplyPasteHold()"
+            />
+            <button onclick="spApplyPasteHold()" style="padding:9px 18px;background:var(--burgundy);color:var(--cream);border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Apply</button>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-num">2</div>
+            <div>
+              <div class="step-title">Upload Transfer Orders</div>
+              <div class="step-desc">Upload today's orders — on-floor STs already picked &amp; pending STs not yet started</div>
+            </div>
+          </div>
+          <div class="upload-zone" id="sp-zone-plan">
+            <input type="file" id="sp-file-plan" accept=".xlsx,.xls,.csv" />
+            <div class="upload-icon">📋</div>
+            <div class="upload-label">Drop your plan file here</div>
+            <div class="upload-hint">Excel with Date · ST · Store · SKU · QTY columns</div>
+            <div class="upload-filename" id="sp-name-plan" style="display:none"></div>
+          </div>
+          <div class="info-note">
+            <strong>Expected columns:</strong> Date · ST · Store · SKU · QTY &nbsp;·&nbsp;
+            Trucks auto-calculated: ≤7,900 = 1 🚛 · ≤14,500 = 2 🚛 · >14,500 = 3 🚛
+          </div>
+          <div class="btn-row">
+            <button class="btn-secondary" onclick="spDownloadTemplate()">⬇ Download Template</button>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-num">3</div>
+            <div>
+              <div class="step-title">Transfer Plan</div>
+              <div class="step-desc" id="sp-table-desc">No STs added yet</div>
+            </div>
+          </div>
+          <div class="plan-table-wrap">
+            <table id="sp-plan-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>ST Number</th><th>Dark Store</th>
+                  <th>SKU</th><th>QTY</th><th>Trucks</th><th>Status</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="sp-plan-tbody">
+                <tr><td colspan="8"><div class="empty-state"><div class="big">📋</div>Add STs to see the plan</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" onclick="spGenerateReport()" id="sp-gen-btn" disabled>🔄 Generate Report</button>
+            <button class="btn-secondary" onclick="spClearAll()">🗑 Clear All</button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-card" id="sp-results-card">
+          <div class="results-title">Plan <span>Ready</span> ✓</div>
+          <div class="kpi-bar">
+            <div class="kpi-box"><div class="kpi-value" id="sp-kpi-sts">—</div><div class="kpi-label">Total STs</div></div>
+            <div class="kpi-box"><div class="kpi-value" id="sp-kpi-stores">—</div><div class="kpi-label">Active Stores</div></div>
+            <div class="kpi-box"><div class="kpi-value" id="sp-kpi-trucks">—</div><div class="kpi-label">Total Trucks</div></div>
+            <div class="kpi-box"><div class="kpi-value" id="sp-kpi-hold">—</div><div class="kpi-label">On Hold</div></div>
+            <div class="kpi-box"><div class="kpi-value" id="sp-kpi-qty">—</div><div class="kpi-label">Total Units</div></div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-lime" onclick="spDownloadReport()">⬇ Download Excel</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>talabat DC Toolbox &nbsp;·&nbsp; Built for <span>Data Team</span></footer>
+  </div><!-- /main-content -->
+</div><!-- /app-body -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+const TOOL_NAMES = { home: 'Home', stock: 'Stock Cleaner', shipping: 'Shipping Plan' };
+
+function showTool(id) {
+  document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  document.getElementById('topbar-tool-name').textContent = TOOL_NAMES[id] || id;
+  // close sidebar on mobile after selection
+  if (window.innerWidth <= 700) closeSidebar();
+  window.scrollTo(0, 0);
+}
+
+let sidebarOpen = true;
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const mc = document.getElementById('main-content');
+  const ov = document.getElementById('sidebar-overlay');
+  if (window.innerWidth <= 700) {
+    // mobile: slide in/out
+    sb.classList.toggle('open');
+    ov.classList.toggle('visible', sb.classList.contains('open'));
+  } else {
+    // desktop: collapse/expand
+    sidebarOpen = !sidebarOpen;
+    sb.classList.toggle('collapsed', !sidebarOpen);
+    mc.classList.toggle('full-width', !sidebarOpen);
+  }
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+}
+
+
+// ══════════════════════════════════════════════════════
+// STOCK CLEANER LOGIC
+// ══════════════════════════════════════════════════════
+let scOnHandData = null, scPhysicalData = null, scOutputBlob = null;
+
+function scSetProgress(pct, label) {
+  document.getElementById('sc-progress-bar').style.width = pct + '%';
+  document.getElementById('sc-progress-label').textContent = label;
+  document.getElementById('sc-progress-wrap').classList.add('visible');
+  document.getElementById('sc-progress-label').classList.add('visible');
+}
+function scShowError(msg) {
+  const el = document.getElementById('sc-error-msg');
+  el.textContent = msg; el.classList.add('visible');
+}
+function scClearError() { document.getElementById('sc-error-msg').classList.remove('visible'); }
+
+function scToggleEx(label) {
+  const cb = label.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  label.classList.toggle('active', cb.checked);
+}
+
+function scCheckReady() {
+  document.getElementById('sc-process-btn').disabled = !(scOnHandData && scPhysicalData);
+}
+
+function scReadFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        resolve(XLSX.utils.sheet_to_json(ws));
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+document.getElementById('sc-file-onhand').addEventListener('change', async function() {
+  if (!this.files[0]) return;
+  try {
+    scOnHandData = await scReadFile(this.files[0]);
+    document.getElementById('sc-name-onhand').textContent = '✓ ' + this.files[0].name;
+    document.getElementById('sc-name-onhand').style.display = 'inline-block';
+    document.getElementById('sc-zone-onhand').classList.add('done');
+    scCheckReady();
+  } catch(e) { scShowError('Could not read On Hand file. Make sure it is a valid .xlsx file.'); }
+});
+
+document.getElementById('sc-file-physical').addEventListener('change', async function() {
+  if (!this.files[0]) return;
+  try {
+    scPhysicalData = await scReadFile(this.files[0]);
+    document.getElementById('sc-name-physical').textContent = '✓ ' + this.files[0].name;
+    document.getElementById('sc-name-physical').style.display = 'inline-block';
+    document.getElementById('sc-zone-physical').classList.add('done');
+    scCheckReady();
+  } catch(e) { scShowError('Could not read Physical file. Make sure it is a valid .xlsx file.'); }
+});
+
+// Drag & drop for stock cleaner
+['sc-zone-onhand','sc-zone-physical'].forEach(id => {
+  const zone = document.getElementById(id);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const inputId = id === 'sc-zone-onhand' ? 'sc-file-onhand' : 'sc-file-physical';
+    const input = document.getElementById(inputId);
+    if (e.dataTransfer.files[0]) {
+      const dt = new DataTransfer(); dt.items.add(e.dataTransfer.files[0]);
+      input.files = dt.files; input.dispatchEvent(new Event('change'));
+    }
+  });
+});
+
+function scGetLocType(loc) {
+  const l = loc.toLowerCase();
+  if (l.startsWith('dock')) return 'Dock';
+  if (l === 'v-d') return 'V-D';
+  if (l === 'h-d') return 'H-D';
+  if (l.startsWith('moq')) return 'MOQ';
+  if (l === 'truck 01') return 'Truck';
+  if (l === 'd.damage') return 'Damage';
+  if (l === '1000g') return '1000G';
+  if (l === '4000g') return '4000G';
+  if (l === 'ex-r01-a') return 'EX-R01-A';
+  if (l === 'm-50') return 'M-50';
+  if (l === 'ps') return 'PS';
+  if (l === 'sold-off') return 'Sold-off';
+  return 'Other';
+}
+
+async function scProcess() {
+  scClearError();
+  scOutputBlob = null;
+  document.getElementById('sc-results-card').classList.remove('visible');
+  document.getElementById('sc-process-btn').disabled = true;
+
+  try {
+    scSetProgress(10, 'Reading files...');
+    await new Promise(r => setTimeout(r, 50));
+
+    const normalize = s => String(s).trim().toLowerCase().replace(/\s+/g, ' ');
+    const ohKeys = Object.keys(scOnHandData[0] || {});
+    const phKeys = Object.keys(scPhysicalData[0] || {});
+
+    const ohItemCol = ohKeys.find(k => normalize(k).includes('item') && normalize(k).includes('number'))
+                  || ohKeys.find(k => normalize(k).includes('item')) || ohKeys[0];
+    const ohAvailCol = ohKeys.find(k => normalize(k).includes('available physical'))
+                    || ohKeys.find(k => normalize(k).startsWith('available'))
+                    || ohKeys.find(k => normalize(k).includes('avail'));
+    const phItemCol = phKeys.find(k => normalize(k).includes('item') && normalize(k).includes('number'))
+                   || phKeys.find(k => normalize(k).includes('item')) || phKeys[0];
+    const phLocCol = phKeys.find(k => normalize(k).includes('location')) || phKeys.find(k => normalize(k) === 'loc');
+    const phStatusCol = phKeys.find(k => normalize(k).includes('inventory status')) || phKeys.find(k => normalize(k).includes('status'));
+    const phQtyCol = phKeys.find(k => normalize(k).includes('physical inventory'))
+                  || phKeys.find(k => normalize(k).includes('physical'))
+                  || phKeys.find(k => normalize(k).includes('quantity'))
+                  || phKeys.find(k => normalize(k).includes('qty'));
+
+    if (!ohItemCol || !ohAvailCol) { scShowError('Could not detect columns in On Hand file. Found: ' + ohKeys.join(', ')); document.getElementById('sc-process-btn').disabled = false; return; }
+    if (!phItemCol || !phLocCol || !phStatusCol || !phQtyCol) { scShowError('Could not detect columns in Physical file. Found: ' + phKeys.join(', ')); document.getElementById('sc-process-btn').disabled = false; return; }
+
+    scSetProgress(25, 'Building exclusion list...');
+    await new Promise(r => setTimeout(r, 50));
+
+    const checkedBoxes = document.querySelectorAll('#panel-stock .exclusion-item input[type="checkbox"]:checked');
+    const excludePatterns = [], excludeExact = new Set();
+    checkedBoxes.forEach(cb => {
+      cb.value.split('|').forEach(v => {
+        if (v === 'MOQ') excludePatterns.push('moq');
+        else excludeExact.add(v.trim());
+      });
+    });
+
+    const allLocs = [...new Set(scPhysicalData.map(r => String(r[phLocCol] || '')))];
+    if (excludePatterns.includes('moq')) allLocs.filter(l => l.toLowerCase().startsWith('moq')).forEach(l => excludeExact.add(l));
+
+    scSetProgress(45, 'Calculating excluded quantities...');
+    await new Promise(r => setTimeout(r, 50));
+
+    const excludedMap = {}, damagedMap = {};
+    let totalExcludedQty = 0;
+    const affectedItems = new Set();
+
+    scPhysicalData.forEach(row => {
+      const loc = String(row[phLocCol] || '');
+      const status = String(row[phStatusCol] || '');
+      const item = String(row[phItemCol] || '');
+      const qty = parseFloat(row[phQtyCol]) || 0;
+      if (excludeExact.has(loc) && status.toLowerCase() === 'available') {
+        excludedMap[item] = (excludedMap[item] || 0) + qty;
+        totalExcludedQty += qty; affectedItems.add(item);
+      }
+      if (status.toLowerCase() === 'damaged') {
+        damagedMap[item] = (damagedMap[item] || 0) + qty;
+        totalExcludedQty += qty; affectedItems.add(item);
+      }
+    });
+    Object.keys(damagedMap).forEach(item => { excludedMap[item] = (excludedMap[item] || 0) + damagedMap[item]; });
+
+    scSetProgress(70, 'Merging with on hand stock...');
+    await new Promise(r => setTimeout(r, 50));
+
+    const result = scOnHandData.map(row => {
+      const item = String(row[ohItemCol] || '');
+      const avail = parseFloat(row[ohAvailCol]) || 0;
+      const excl = excludedMap[item] || 0;
+      return { ...row, 'Excluded Qty': excl, 'Net Available': avail - excl };
+    });
+
+    scSetProgress(88, 'Generating Excel file...');
+    await new Promise(r => setTimeout(r, 50));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(result);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws[addr]) continue;
+      ws[addr].s = { fill: { fgColor: { rgb: 'FF5900' } }, font: { bold: true, color: { rgb: 'FFFFFF' } } };
+    }
+    ws['!cols'] = Array(Object.keys(result[0]).length).fill({ wch: 22 });
+    XLSX.utils.book_append_sheet(wb, ws, 'Net Available Stock');
+
+    const detailRows = [];
+    scPhysicalData.forEach(row => {
+      const loc = String(row[phLocCol] || '');
+      const status = String(row[phStatusCol] || '');
+      const item = String(row[phItemCol] || '');
+      const qty = parseFloat(row[phQtyCol]) || 0;
+      if (qty === 0) return;
+      const isExcludedLoc = excludeExact.has(loc) && status.toLowerCase() === 'available';
+      const isDamaged = status.toLowerCase() === 'damaged';
+      if (!isExcludedLoc && !isDamaged) return;
+      const ohRow = scOnHandData.find(r => String(r[ohItemCol]) === item);
+      const productName = ohRow ? (ohRow['Product name'] || ohRow[Object.keys(ohRow)[1]] || '') : '';
+      const originalAvail = ohRow ? (parseFloat(ohRow[ohAvailCol]) || 0) : 0;
+      detailRows.push({ 'Item Number': item, 'Product Name': productName, 'Excluded Location': loc, 'Location Type': isDamaged ? 'Damaged' : scGetLocType(loc), 'Excluded Qty': qty, 'Original Available': originalAvail, 'Net Available': originalAvail - (excludedMap[item] || 0) });
+    });
+    detailRows.sort((a, b) => a['Item Number'].localeCompare(b['Item Number']));
+    const ws2 = XLSX.utils.json_to_sheet(detailRows);
+    ws2['!cols'] = [{ wch:16 },{ wch:38 },{ wch:20 },{ wch:16 },{ wch:16 },{ wch:18 },{ wch:16 }];
+    const range2 = XLSX.utils.decode_range(ws2['!ref'] || 'A1');
+    for (let C = range2.s.c; C <= range2.e.c; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws2[addr]) continue;
+      ws2[addr].s = { fill: { fgColor: { rgb: '411517' } }, font: { bold: true, color: { rgb: 'FF5900' } } };
+    }
+    XLSX.utils.book_append_sheet(wb, ws2, 'Exclusion Detail');
+
+    scOutputBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    scSetProgress(100, 'Done!');
+
+    document.getElementById('sc-stat-total').textContent = result.length.toLocaleString();
+    document.getElementById('sc-stat-affected').textContent = affectedItems.size.toLocaleString();
+    document.getElementById('sc-stat-deducted').textContent = totalExcludedQty.toLocaleString();
+    document.getElementById('sc-stat-locs').textContent = allLocs.length.toLocaleString();
+    document.getElementById('sc-results-card').classList.add('visible');
+
+    document.getElementById('sc-download-btn').onclick = () => {
+      const a = document.createElement('a');
+      a.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + scOutputBlob;
+      a.download = 'talabat_net_available_stock.xlsx';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    };
+
+  } catch(e) { scShowError('An error occurred: ' + e.message); }
+  document.getElementById('sc-process-btn').disabled = false;
+}
+
+
+// ══════════════════════════════════════════════════════
+// SHIPPING PLAN LOGIC
+// ══════════════════════════════════════════════════════
+const SP_ALL_STORES = [
+  {id:1,name:"New Maadi - Laselky-DS 1"},{id:2,name:"Dokki-DS 2"},{id:3,name:"Rehab-DS 3"},
+  {id:4,name:"Zahraa el Maadi-DS 4"},{id:5,name:"Lebanon Square-DS 5"},{id:6,name:"Mokattam-DS 6"},
+  {id:7,name:"Agouza-DS 7"},{id:8,name:"Nasr City-DS 8"},{id:9,name:"Maadi Corniche-DS 9"},
+  {id:10,name:"Hegaz-DS 10"},{id:11,name:"Haram Tersa-DS 11"},{id:12,name:"Icon Mall-DS 12"},
+  {id:13,name:"Manial-DS 13"},{id:14,name:"Helwan-DS 14"},{id:15,name:"Sayeda Zeinab-DS 15"},
+  {id:16,name:"El Daher-DS 16"},{id:17,name:"City Stars-DS 17"},{id:18,name:"Hadayek el Ahram-DS 18"},
+  {id:19,name:"First Mall-DS 19"},{id:20,name:"Fount Mall-DS 20"},{id:21,name:"Kasr El Kobba-DS 21"},
+  {id:22,name:"Zayed-DS 22"},{id:23,name:"Madinty-DS 23"},{id:24,name:"Tanta-DS 24"},
+  {id:25,name:"Mansoura-DS 25"},{id:26,name:"Alex (Sidi bishr)-DS 26"},{id:27,name:"Alex (Ibrahimya)-DS 27"},
+  {id:28,name:"Shoubra-DS 28"},{id:29,name:"Shrouk-DS 29"},{id:30,name:"Obour-DS 30"},
+  {id:31,name:"Ain-shams-DS 31"},{id:32,name:"Port said-DS 32"},{id:33,name:"Zakazik-DS 33"},
+  {id:34,name:"Ismailia-DS 34"},{id:35,name:"Assuit-DS 35"},{id:36,name:"Palm Hills-DS 36"},
+  {id:37,name:"Tagmoa Awal-DS 37"},{id:38,name:"Hurgada-DS 38"},{id:39,name:"Madinaty Craft-DS 39"},
+  {id:40,name:"Nasrcity 10th-DS 40"},{id:41,name:"Alex (Wingat)-DS 41"},{id:42,name:"Faisal-DS 42"},
+  {id:43,name:"Tagamoa5 Mahkama-DS 43"},{id:44,name:"Hadayek October-DS 44"},{id:45,name:"Tagamoa Golden-DS 45"},
+  {id:46,name:"Mokatam hadaba-DS 46"},{id:47,name:"October industrial-DS 47"},{id:48,name:"Mansoura gomhoreya-DS 48"},
+  {id:49,name:"Zahraa Maadi 2-DS 49"},{id:50,name:"Rehab chillout-DS 50"},{id:51,name:"Shrouk Mgawra-DS 51"},
+  {id:52,name:"Heliopolis Sheraton-DS 52"},{id:53,name:"Zayed (2)-DS 53"},{id:54,name:"Faisal Maryoteya (2)-DS 54"},
+  {id:55,name:"Tagamoa El Banafseg-DS 55"},{id:56,name:"Rock Vera Mall-DS 56"},{id:57,name:"El Obour Industrial Area-DS 57"},
+  {id:58,name:"October Festival City-DS 58"},{id:59,name:"Nasr City (3)-DS 59"},{id:60,name:"Alexandria Smouha-DS 60"},
+  {id:61,name:"New Damietta-DS 61"},{id:62,name:"Alexandria Moharam Bek-DS 62"},{id:63,name:"Nasr City (4)-DS 63"},
+  {id:64,name:"Tagamoa 5 Spot Mall-DS 64"},{id:65,name:"Suez-DS 65"},{id:66,name:"Palm Hills (2)-DS 66"},
+  {id:67,name:"Alexandria Agamy-DS 67"},{id:68,name:"Alexandria El Montazah-DS 68"},{id:69,name:"Tagamoa 1 Toya Mall-DS 69"},
+  {id:70,name:"Tagamoa 5 El Lotus-DS 70"},{id:71,name:"Mokattam (3)-DS 71"},{id:72,name:"Nasr City (5)-DS 72"},
+  {id:73,name:"Shrouk (3)-DS 73"},{id:74,name:"10th of Ramadan-DS 74"},{id:75,name:"Sheben El Kom-DS 75"},
+  {id:76,name:"October Beta Gardens-DS 76"},{id:77,name:"El Sheikh Zayed El Hay 4-DS 77"},{id:78,name:"Hadayek El Ahram 2-DS 78"},
+  {id:79,name:"Alexandria El Seyouf-DS 79"},{id:80,name:"El Mahalla-DS 80"},{id:81,name:"Maadi El Nadi-DS 81"},
+  {id:82,name:"October West Somed-DS 82"},{id:83,name:"Alexandria Smouha 2-DS 83"},{id:84,name:"Nasr City (6)-DS 84"},
+  {id:85,name:"Imbaba-DS 85"},{id:86,name:"Haram (2)-DS 86"},{id:87,name:"Obour (3)-DS 87"},
+  {id:88,name:"Zakazik (2)-DS 88"},{id:89,name:"Mountain View-DS 89"},
+];
+
+let spPlanRows = [], spHoldSet = new Set([62,69,83,84]), spOutputBlob = null;
+const SP_MAX_TRUCKS = 3;
+
+function spCalcTrucks(qty) {
+  if (qty <= 7900) return 1;
+  if (qty <= 14500) return 2;
+  return 3;
+}
+
+(function spInit() {
+  const today = new Date();
+  document.getElementById('sp-plan-date').value = today.toISOString().split('T')[0];
+  spBuildHoldDropdown();
+  spInitHoldDropdown();
+  spHoldSet.forEach(id => {
+    const opt = document.querySelector(`#sp-hold-options .ms-option[data-id="${id}"]`);
+    if (opt) { opt.classList.add('selected'); opt.querySelector('input').checked = true; }
+  });
+  spRenderHoldTags();
+})();
+
+function spBuildHoldDropdown() {
+  const container = document.getElementById('sp-hold-options');
+  SP_ALL_STORES.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'ms-option'; div.dataset.id = s.id; div.dataset.name = s.name;
+    div.innerHTML = `<input type="checkbox" /> DS${s.id} — ${s.name}`;
+    div.addEventListener('click', e => { e.stopPropagation(); spToggleHold(s.id, s.name, div); });
+    container.appendChild(div);
+  });
+}
+
+function spToggleHold(id, name, div) {
+  if (spHoldSet.has(id)) { spHoldSet.delete(id); div.classList.remove('selected'); div.querySelector('input').checked = false; }
+  else { spHoldSet.add(id); div.classList.add('selected'); div.querySelector('input').checked = true; }
+  spRenderHoldTags(); spRenderTable();
+}
+
+function spApplyPasteHold() {
+  const raw = document.getElementById('sp-hold-paste').value;
+  if (!raw.trim()) return;
+  const nums = raw.match(/\d+/g);
+  if (!nums) return;
+  nums.forEach(n => {
+    const id = parseInt(n);
+    const store = SP_ALL_STORES.find(s => s.id === id);
+    if (!store || spHoldSet.has(id)) return;
+    spHoldSet.add(id);
+    const opt = document.querySelector(`#sp-hold-options .ms-option[data-id="${id}"]`);
+    if (opt) { opt.classList.add('selected'); opt.querySelector('input').checked = true; }
+  });
+  document.getElementById('sp-hold-paste').value = '';
+  spRenderHoldTags(); spRenderTable();
+}
+
+function spRenderHoldTags() {
+  const container = document.getElementById('sp-hold-tags');
+  container.innerHTML = '';
+  if (spHoldSet.size === 0) { container.innerHTML = '<span class="ms-placeholder">Select stores...</span>'; return; }
+  spHoldSet.forEach(id => {
+    const s = SP_ALL_STORES.find(x => x.id === id);
+    if (!s) return;
+    const tag = document.createElement('span');
+    tag.className = 'ms-tag';
+    tag.innerHTML = `DS${id}<span class="x" data-id="${id}">×</span>`;
+    tag.querySelector('.x').addEventListener('click', e => {
+      e.stopPropagation(); spHoldSet.delete(id);
+      const opt = document.querySelector(`#sp-hold-options .ms-option[data-id="${id}"]`);
+      if (opt) { opt.classList.remove('selected'); opt.querySelector('input').checked = false; }
+      spRenderHoldTags(); spRenderTable();
+    });
+    container.appendChild(tag);
+  });
+}
+
+function spInitHoldDropdown() {
+  const inputEl = document.getElementById('sp-hold-input');
+  const dropdown = document.getElementById('sp-hold-dropdown');
+  const arrow = document.getElementById('sp-hold-arrow');
+  const searchEl = document.getElementById('sp-hold-search');
+  inputEl.addEventListener('click', () => {
+    const isOpen = dropdown.classList.contains('open');
+    dropdown.classList.toggle('open', !isOpen);
+    arrow.classList.toggle('open', !isOpen);
+    inputEl.classList.toggle('open', !isOpen);
+    if (!isOpen) searchEl.focus();
+  });
+  searchEl.addEventListener('input', () => {
+    const q = searchEl.value.trim(), qLower = q.toLowerCase();
+    const isNum = /^\d+$/.test(q);
+    document.querySelectorAll('#sp-hold-options .ms-option').forEach(opt => {
+      const idMatch = isNum ? String(opt.dataset.id) === q : false;
+      const nameMatch = !isNum && opt.dataset.name.toLowerCase().includes(qLower);
+      opt.style.display = (!q || idMatch || nameMatch) ? '' : 'none';
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!document.getElementById('sp-hold-wrap').contains(e.target)) {
+      dropdown.classList.remove('open'); arrow.classList.remove('open'); inputEl.classList.remove('open');
+    }
+  });
+}
+
+document.getElementById('sp-file-plan').addEventListener('change', async function() {
+  if (!this.files[0]) return;
+  try {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws);
+      if (!rows.length) { alert('File is empty or unreadable.'); return; }
+
+      const norm = s => String(s).trim().toLowerCase().replace(/\s+/g,'');
+      const keys = Object.keys(rows[0]);
+      const stCol   = keys.find(k => norm(k).includes('st'));
+      const storeCol = keys.find(k => norm(k).includes('store'));
+      const skuCol  = keys.find(k => norm(k).includes('sku'));
+      const qtyCol  = keys.find(k => norm(k).includes('qty') || norm(k).includes('quantity'));
+      const dateCol = keys.find(k => norm(k).includes('date'));
+
+      if (!stCol || !qtyCol) { alert('Could not detect columns. Need ST and QTY.\nFound: ' + keys.join(', ')); return; }
+
+      let added = 0;
+      rows.forEach(row => {
+        const stNum = String(row[stCol] || '').trim();
+        if (!stNum) return;
+        const qty = parseFloat(row[qtyCol]) || 0;
+        const sku = parseFloat(row[skuCol]) || 0;
+        const storeRaw = storeCol ? String(row[storeCol] || '') : '';
+        const rowDateRaw = dateCol ? row[dateCol] : '';
+        let rowDate = '';
+        if (rowDateRaw) {
+          if (typeof rowDateRaw === 'number') {
+            const jsDate = new Date(new Date(1899,11,30).getTime() + rowDateRaw * 86400000);
+            const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            rowDate = `${jsDate.getDate()}-${mn[jsDate.getMonth()]}-${jsDate.getFullYear()}`;
+          } else { rowDate = String(rowDateRaw).trim(); }
+        }
+        let storeId = null, storeName = storeRaw;
+        if (storeRaw) {
+          const dsMatch = storeRaw.match(/DS[\s_-]?(\d+)/i);
+          if (dsMatch) { const found = SP_ALL_STORES.find(s => s.id === parseInt(dsMatch[1])); if (found) { storeId = found.id; storeName = found.name; } }
+          if (!storeId) { const found = SP_ALL_STORES.find(s => s.name.toLowerCase().includes(storeRaw.toLowerCase().substring(0,8))); if (found) { storeId = found.id; storeName = found.name; } }
+        }
+        if (!storeId) { storeId = 0; storeName = storeRaw || 'Unknown'; }
+        spPlanRows.push({ st: stNum, storeId, storeName, sku, qty, trucks: spCalcTrucks(qty), date: rowDate });
+        added++;
+      });
+      document.getElementById('sp-name-plan').textContent = '✓ ' + this.files[0].name + ' (' + added + ' STs)';
+      document.getElementById('sp-name-plan').style.display = 'inline-block';
+      document.getElementById('sp-zone-plan').classList.add('done');
+      spRenderTable();
+    };
+    reader.readAsArrayBuffer(this.files[0]);
+  } catch(e) { alert('Error: ' + e.message); }
+});
+
+const spZone = document.getElementById('sp-zone-plan');
+spZone.addEventListener('dragover', e => { e.preventDefault(); spZone.classList.add('drag-over'); });
+spZone.addEventListener('dragleave', () => spZone.classList.remove('drag-over'));
+spZone.addEventListener('drop', e => {
+  e.preventDefault(); spZone.classList.remove('drag-over');
+  const input = document.getElementById('sp-file-plan');
+  if (e.dataTransfer.files[0]) {
+    const dt = new DataTransfer(); dt.items.add(e.dataTransfer.files[0]);
+    input.files = dt.files; input.dispatchEvent(new Event('change'));
+  }
+});
+
+function spRenderTable() {
+  const tbody = document.getElementById('sp-plan-tbody');
+  const visibleRows = spPlanRows.filter(r => !spHoldSet.has(r.storeId));
+  document.getElementById('sp-table-desc').textContent =
+    visibleRows.length + ' STs' +
+    (spHoldSet.size ? ' · ' + spHoldSet.size + ' stores on hold' : '') +
+    ' · Total trucks: ' + visibleRows.reduce((s,r) => s+r.trucks, 0);
+  document.getElementById('sp-gen-btn').disabled = visibleRows.length === 0;
+  if (!spPlanRows.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="big">📋</div>Add STs to see the plan</div></td></tr>'; return; }
+  tbody.innerHTML = '';
+  spPlanRows.forEach((r, idx) => {
+    const isHold = spHoldSet.has(r.storeId);
+    const tr = document.createElement('tr');
+    if (isHold) tr.style.opacity = '0.45';
+    const tc = r.trucks===1?'trucks-1':r.trucks===2?'trucks-2':'trucks-3';
+    const te = r.trucks===1?'🚛×1':r.trucks===2?'🚛×2':'🚛×3';
+    tr.innerHTML = `<td>${idx+1}</td><td class="st-num">${r.st}</td><td class="ds-name">${r.storeName}</td><td>${r.sku?r.sku.toLocaleString():'—'}</td><td>${r.qty.toLocaleString()}</td><td><span class="trucks-badge ${tc}">${te}</span></td><td>${isHold?'<span class="status-hold">HOLD</span>':'<span class="status-ok">Active</span>'}</td><td><button class="delete-row-btn" onclick="spDeleteRow(${idx})">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function spDeleteRow(idx) { spPlanRows.splice(idx,1); spRenderTable(); }
+function spClearAll() {
+  if (!spPlanRows.length) return;
+  if (!confirm('Clear all STs?')) return;
+  spPlanRows = []; document.getElementById('sp-results-card').classList.remove('visible'); spRenderTable();
+}
+
+function spStyleHeader(ws, bgHex, fgHex) {
+  if (!ws['!ref']) return;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const addr = XLSX.utils.encode_cell({r:0,c:C});
+    if (!ws[addr]) continue;
+    ws[addr].s = { fill: { fgColor: { rgb: bgHex } }, font: { bold: true, color: { rgb: fgHex } } };
+  }
+}
+
+function spGenerateReport() {
+  const activeRows = spPlanRows.filter(r => !spHoldSet.has(r.storeId));
+  const dateVal = document.getElementById('sp-plan-date').value;
+  const dateLabel = dateVal || new Date().toISOString().split('T')[0];
+
+  const totalTrucks = activeRows.reduce((s,r) => s+r.trucks, 0);
+  const totalUnits = activeRows.reduce((s,r) => s+r.qty, 0);
+  document.getElementById('sp-kpi-sts').textContent = activeRows.length;
+  document.getElementById('sp-kpi-stores').textContent = SP_ALL_STORES.filter(s => !spHoldSet.has(s.id)).length;
+  document.getElementById('sp-kpi-trucks').textContent = totalTrucks;
+  document.getElementById('sp-kpi-hold').textContent = spHoldSet.size;
+  document.getElementById('sp-kpi-qty').textContent = totalUnits.toLocaleString();
+
+  const wb = XLSX.utils.book_new();
+  const storeMap = {};
+  SP_ALL_STORES.forEach(s => { storeMap[s.id] = { storeId: s.id, storeName: s.name, sts:[], qtys:[], skus:[], trucks:0, isHold: spHoldSet.has(s.id) }; });
+  spPlanRows.forEach(r => {
+    if (!storeMap[r.storeId]) return;
+    storeMap[r.storeId].sts.push(r.st);
+    storeMap[r.storeId].qtys.push(r.qty);
+    storeMap[r.storeId].skus.push(r.sku||0);
+    if (!spHoldSet.has(r.storeId)) storeMap[r.storeId].trucks += r.trucks;
+  });
+
+  function getStatus(trucks, isHold) { if (isHold) return 'HOLD'; if (trucks===0) return 'OK'; if (trucks>=SP_MAX_TRUCKS) return 'FULL'; return 'PARTIAL'; }
+  const sortedIds = Object.keys(storeMap).sort((a,b) => {
+    const hA = storeMap[a].isHold, hB = storeMap[b].isHold;
+    if (hA !== hB) return hA ? 1 : -1;
+    const avA = Math.max(0, SP_MAX_TRUCKS - storeMap[a].trucks);
+    const avB = Math.max(0, SP_MAX_TRUCKS - storeMap[b].trucks);
+    if (avB !== avA) return avB - avA;
+    return parseInt(a) - parseInt(b);
+  });
+
+  const overAllocated = Object.keys(storeMap).filter(id => !storeMap[id].isHold && storeMap[id].trucks > SP_MAX_TRUCKS);
+  if (overAllocated.length) alert('⚠️ Stores exceed 3 trucks:\n' + overAllocated.map(id=>`DS${id} (${storeMap[id].trucks} trucks)`).join('\n'));
+
+  const sheet1Data = sortedIds.map(id => {
+    const d = storeMap[id];
+    const status = getStatus(d.trucks, d.isHold);
+    const avail = Math.max(0, SP_MAX_TRUCKS - d.trucks);
+    return { 'DS #': parseInt(id), 'Store': d.storeName.replace(/-DS\s*\d+$/i,'').trim(), 'Orders (ST)': d.sts.join(', '), 'Total SKUs': d.skus.join(' , '), 'Total QTY': d.qtys.join(' , '), 'Trucks Allocated': d.trucks, 'Available to Create': d.isHold ? '' : avail, 'Status': status };
+  });
+
+  const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
+  ws1['!cols'] = [{wch:7},{wch:28},{wch:36},{wch:13},{wch:28},{wch:18},{wch:20},{wch:10}];
+  spStyleHeader(ws1, 'FF5900', 'FFFFFF');
+
+  const statusColors = { OK:'d4f5e2', PARTIAL:'fef3d7', FULL:'fde8e6', HOLD:'eeeeee' };
+  const statusFonts  = { OK:'1a9e52', PARTIAL:'b07d0e', FULL:'c0392b', HOLD:'888888' };
+  sheet1Data.forEach((row, i) => {
+    const bg = statusColors[row['Status']] || 'FFFFFF';
+    for (let C=0; C<8; C++) { const addr = XLSX.utils.encode_cell({r:i+1,c:C}); if (!ws1[addr]) ws1[addr]={v:'',t:'s'}; ws1[addr].s = {fill:{fgColor:{rgb:bg}},font:{color:{rgb:'411517'}}}; }
+    const sa = XLSX.utils.encode_cell({r:i+1,c:7});
+    if (ws1[sa]) ws1[sa].s = {fill:{fgColor:{rgb:bg}},font:{bold:true,color:{rgb:statusFonts[row['Status']]||'411517'}}};
+  });
+
+  const activeOnlyIds = sortedIds.filter(id => !storeMap[id].isHold);
+  const totSTs = activeOnlyIds.reduce((s,id)=>s+storeMap[id].sts.length,0);
+  const totSKU = activeOnlyIds.reduce((s,id)=>s+storeMap[id].skus.reduce((a,b)=>a+b,0),0);
+  const totQTY = activeOnlyIds.reduce((s,id)=>s+storeMap[id].qtys.reduce((a,b)=>a+b,0),0);
+  const totTruck = activeOnlyIds.reduce((s,id)=>s+storeMap[id].trucks,0);
+  const totAvail = activeOnlyIds.reduce((s,id)=>s+Math.max(0,SP_MAX_TRUCKS-storeMap[id].trucks),0);
+  const totRowIdx = sheet1Data.length + 1;
+  ['TOTAL',SP_ALL_STORES.filter(s=>!spHoldSet.has(s.id)).length+' active stores',totSTs+' STs',totSKU,totQTY,totTruck,totAvail,''].forEach((v,C) => {
+    const addr = XLSX.utils.encode_cell({r:totRowIdx,c:C});
+    ws1[addr] = {v,t:typeof v==='number'?'n':'s'};
+    ws1[addr].s = {fill:{fgColor:{rgb:'FF5900'}},font:{bold:true,color:{rgb:'FFFFFF'}}};
+  });
+  ws1['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0},e:{r:totRowIdx,c:7}});
+  XLSX.utils.book_append_sheet(wb, ws1, 'Shipping Plan');
+
+  if (spPlanRows.length) {
+    const rawData = spPlanRows.map((r,i) => {
+      let displayDate = r.date || dateLabel;
+      if (displayDate && /^\d{4,5}$/.test(String(displayDate).trim())) {
+        const jsDate = new Date(new Date(1899,11,30).getTime()+parseInt(displayDate)*86400000);
+        const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        displayDate = `${jsDate.getDate()}-${mn[jsDate.getMonth()]}-${jsDate.getFullYear()}`;
+      }
+      return {'#':i+1,'Date':displayDate,'ST':r.st,'Store':r.storeName,'SKU':r.sku||'','QTY':r.qty};
+    });
+    const ws2 = XLSX.utils.json_to_sheet(rawData);
+    ws2['!cols'] = [{wch:5},{wch:12},{wch:14},{wch:38},{wch:10},{wch:12}];
+    spStyleHeader(ws2, '411517', 'FF5900');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Transfer Orders');
+  }
+
+  if (spHoldSet.size) {
+    const today = new Date();
+    const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dateNote = `Hold as of ${today.getDate()}-${mn[today.getMonth()]}-${today.getFullYear()}`;
+    const holdData = [];
+    spHoldSet.forEach(id => {
+      const s = SP_ALL_STORES.find(x=>x.id===id);
+      holdData.push({'DS':'DS'+id,'Store':s?s.name:'DS'+id,'STs Held':spPlanRows.filter(r=>r.storeId===id).length,'Status':'HOLD','Note':[62,69,83,84].includes(id)?'Permanently on hold until store goes live':dateNote});
+    });
+    const ws3 = XLSX.utils.json_to_sheet(holdData);
+    ws3['!cols'] = [{wch:8},{wch:38},{wch:12},{wch:10},{wch:40}];
+    spStyleHeader(ws3, 'c0392b', 'FFFFFF');
+    XLSX.utils.book_append_sheet(wb, ws3, 'Hold Stores');
+  }
+
+  spOutputBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+  document.getElementById('sp-results-card').classList.add('visible');
+  document.getElementById('sp-results-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function spDownloadReport() {
+  if (!spOutputBlob) return;
+  const dateVal = document.getElementById('sp-plan-date').value.replace(/-/g,'') || 'plan';
+  const a = document.createElement('a');
+  a.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + spOutputBlob;
+  a.download = `talabat_shipping_plan_${dateVal}.xlsx`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function spDownloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([['Date','ST','Store','SKU','QTY']]);
+  ws['!cols'] = [{wch:12},{wch:14},{wch:38},{wch:10},{wch:12}];
+  spStyleHeader(ws, 'FF5900', 'FFFFFF');
+  XLSX.utils.book_append_sheet(wb, ws, 'Plan');
+  const out = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+  const a = document.createElement('a');
+  a.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + out;
+  a.download = 'talabat_plan_template.xlsx';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+</script>
+</body>
+</html>
